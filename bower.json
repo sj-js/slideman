@@ -1,0 +1,23 @@
+{
+  "name": "paintman",
+  "description": "paintman is javascript library to paint",
+  "main": "dist/js/paintman.min.js",
+  "authors": ["SJ <souljungkim@gmail.com>"],
+  "license": "MIT",
+  "keywords": ["paintman", "paint", "trag", "canvas"],
+  "homepage": "https://github.com/sj-js/paintman",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "bower.json",
+    "gulpfile.js",
+    "package.json",
+    "src",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "crossman": "*"
+  }
+}

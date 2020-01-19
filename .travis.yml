@@ -1,0 +1,31 @@
+language: node_js
+node_js: 11.10.0
+os:
+  - linux
+before_script:
+  - npm install -g gulp
+script: gulp
+
+cache:
+  directories:
+    - "node_modules"
+
+before_deploy:
+  - pwd
+  - ls dist/js/
+  
+deploy:
+  - provider: releases
+    api_key:
+      secure: "AEFhHbVEiPTWAq78a5lMsX3YBx/0crLDA1hOvJX2jzqIFL8hYvzoy2amy3ky5TS1p7e/piG1UtGXgwxl+RhxdAa4mNhKq6d3a2MCw3TASL0stT7JkiNJ1hjpVPLesuovsm64uxbtMkqd1wsTxKLifIFFhqsoXbcQJEmuDTA9vqfxtu1TG89bpPQSnkrDqaNSJthUA3RDEUR6dUyjUr1GeHn129ubLCVvsYUzo4OpldsLROQK3k8E6rIvVSuS8j45V2sDxSb3Y97jGhwA8dg6jBgBy3d1gky22F0A07ANI/CGE9+h91gq2acj8DVfnzX/NmIYxmPIcLjnaCgMk9fMN4cdUsgwlXgbO+aCh/nClP0U/Rl1F6fY9zVrifgfTBoSY+Wdly4AmJuOjFuf+HKU2eKfu70u/A2HCnM7WedIXlIyvnEcqj7Abyhz1z5FXnpz5/3wzTEy597HEGshzy6TCfzIm/YtlHNqT8dLSzp2kIc/gE6PaSWaUYoslGheW4dqBYMQjikU0rb4yzMQEsk/sahRlKAHYnY7S2kTZOHmhxMFtlD+4xzGtgLetAH/7EReYGqXyG+GC8E++cw2XrLuBJpGVTqgARhweZN1uiY5s3F4DYNxnOfs2tH7bkxFq6GnTA1Tz0lm3u8OOoTKwRh6rABS5LLm+cU1gMHhptZyWUA="
+    file: dist/js/slideman.min.js
+    skip_cleanup: true
+    on:
+      repo: sj-js/slideman
+      branch: master
+  - provider: npm
+    email: "$NPM_EMAIL"
+    api_key: "$NPM_API_TOKEN"
+    skip_cleanup: true
+    on:
+      branch: master
