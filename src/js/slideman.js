@@ -15,6 +15,7 @@ try{
  * Module
  ***************************************************************************/
 function SlideMan(){
+    this.event = new SjEvent();
     this.shiftKeyDown = false;
     this.ctrlKeyDown = false;
     this.altKeyDown = false;
@@ -36,12 +37,41 @@ try {
 
 
 
+/***************************************************************************
+ *
+ * EVENT
+ *
+ ***************************************************************************/
+SlideMan.prototype.addEventListener               = function(element, eventName, eventFunc){ this.event.addEventListener(element, eventName, eventFunc); return this; };
+SlideMan.prototype.addEventListenerById           = function(element, eventName, eventFunc){ this.event.addEventListenerById(element, eventName, eventFunc); return this; };
+SlideMan.prototype.addEventListenerByEventName    = function(eventName, eventFunc){ this.event.addEventListenerByEventName(eventName, eventFunc); return this; };
+SlideMan.prototype.hasEventListener               = function(element, eventName, eventFunc){ return this.event.hasEventListener(element, eventName, eventFunc); };
+SlideMan.prototype.hasEventListenerById           = function(element, eventName, eventFunc){ return this.event.hasEventListenerById(element, eventName, eventFunc); };
+SlideMan.prototype.hasEventListenerByEventName    = function(eventName, eventFunc){ return this.event.hasEventListenerByEventName(eventName, eventFunc); };
+SlideMan.prototype.hasEventListenerByEventFunc    = function(eventFunc){ return this.event.hasEventListenerByEventFunc(eventFunc); };
+SlideMan.prototype.removeEventListener            = function(element, eventName, eventFunc){ return this.event.removeEventListener(element, eventName, eventFunc); };
+SlideMan.prototype.removeEventListenerById        = function(element, eventName, eventFunc){ return this.event.removeEventListenerById(element, eventName, eventFunc); };
+SlideMan.prototype.removeEventListenerByEventName = function(eventName, eventFunc){ return this.event.removeEventListenerByEventName(eventName, eventFunc); };
+SlideMan.prototype.removeEventListenerByEventFunc = function(eventFunc){ return this.event.removeEventListenerByEventFunc(eventFunc); };
+SlideMan.prototype.execEventListener              = function(element, eventName, event){ return this.event.execEventListener(element, eventName, event); };
+SlideMan.prototype.execEventListenerById          = function(element, eventName, event){ return this.event.execEventListenerById(element, eventName, event); };
+SlideMan.prototype.execEventListenerByEventName   = function(eventName, event){ return this.event.execEventListenerByEventName(eventName, event); };
+SlideMan.prototype.execEvent                      = function(eventMap, eventNm, event){ return this.event.execEvent(eventMap, eventNm, event); };
 
-SlideMan.prototype.detect = function(){
+SlideMan.prototype.addEventListenerByViewerId     = function(viewerId, eventName, eventFunc){
+    var eventIdForViewer = SlideMan.getViewerEventId(viewerId);
+    this.addEventListenerById(eventIdForViewer, eventName, eventFunc);
+    return this;
+};
+
+
+
+SlideMan.prototype.detect = function(callback){
     var that = this;
     ready(function(){
         that.initScrollView();
         that.initSlideView();
+        (callback && callback(that));
     });
     return this;
 };
@@ -85,7 +115,7 @@ SlideMan.prototype.initScrollView = function(){
                     /*storage만 스크롤하기 위한 도우미Div생성*/
                     viewer.scroller = newEl('div').addClass('assistant').attr('data-type', 'assistant').style('width:100%; overflow:auto;').add(storage).appendTo(viewer).returnElement();
                     storage.linkedScroller = viewer.scroller;
-                    storage.executeEventMustDo = this.whenResize; /* 박스IN OUT 할 때, 반드시 일어나야 하는 이벤트 설정 */ //임시방편으로 리사이즈할때와 같이 설정
+                    // storage.executeEventMustDo = this.whenResize; /* 박스IN OUT 할 때, 반드시 일어나야 하는 이벤트 설정 */ //임시방편으로 리사이즈할때와 같이 설정
 
                     /* Touch Sensor on Mobile*/
                     if (getData().isMobile){
@@ -137,20 +167,24 @@ SlideMan.prototype.initSlideView = function(){
             var eventFn = null;
             /* 이벤트 저장 (슬라이드 뷰에서 슬라이드 발생시마다)*/
             eventFn = getEl(viewerElement).attr('data-event-slide');
-            if (eventFn)
-                viewerElement.executeEventSlide = new Function('viewer', 'menu', 'slide', 'slideId', eventFn);
+            if (eventFn){
+                this.addEventListenerById(viewerId, 'slide', new Function('event', eventFn));
+            }
             /* 이벤트 저장 (슬라이드 뷰에서 슬라이드 발생시마다)*/
             eventFn = getEl(viewerElement).attr('data-event-menu-over');
-            if (eventFn)
-                viewerElement.executeEventMenuOver = new Function('viewer', 'menu', 'slide', 'slideId', eventFn);
+            if (eventFn){
+                this.addEventListenerById(viewerId, 'menuover', new Function('event', eventFn));
+            }
             /* 이벤트 저장 (슬라이드 뷰에서 슬라이드 발생시마다)*/
             eventFn = getEl(viewerElement).attr('data-event-menu-out');
-            if (eventFn)
-                viewerElement.executeEventMenuOut = new Function('viewer', 'menu', 'slide', 'slideId', eventFn);
+            if (eventFn){
+                this.addEventListenerById(viewerId, 'menuout', new Function('event', eventFn));
+            }
             /* 이벤트 저장 (슬라이드 뷰에서 슬라이드 발생시마다)*/
             eventFn = getEl(viewerElement).attr('data-event-menu-click');
-            if (eventFn)
-                viewerElement.executeEventMenuClick = new Function('viewer', 'menu', 'slide', 'slideId', eventFn);
+            if (eventFn){
+                this.addEventListenerById(viewerId, 'menuclick', new Function('event', eventFn));
+            }
         }
 
         /** storage 설정 **/
@@ -161,13 +195,6 @@ SlideMan.prototype.initSlideView = function(){
             for (var l=0; l<storage.children.length; l++){
                 storage.children[l].style.width = storage.children[l].offsetWidth + 'px';
                 storageWidth += storage.children[l].offsetWidth + 10;
-
-                /* 이벤트 저장 (각 슬라이드가 On될 때 마다)*/
-                var eventFn = storage.children[l].getAttribute('data-event-slide');
-                if (eventFn != null && eventFn != undefined){
-                    /* 이벤트 함수 만들기 */
-                    storage.children[l].executeEventSlide = new Function('viewer', 'menu', 'slide', 'slideId', eventFn);
-                }
             }
             storage.style.width = storageWidth + 'px';
             /*storage만 스크롤하기 위한 도우미Div생성*/
@@ -178,7 +205,6 @@ SlideMan.prototype.initSlideView = function(){
             storage.linkedSlider = viewerElement.slider;
             storage.slideIdAndIndexMap = {};
             storage.slideIdAndMenuMap = {};
-            storage.executeEventMustDo = this.whenResize; /* 박스IN OUT 할 때, 반드시 일어나야 하는 이벤트 설정 */ //임시방편으로 리사이즈할때와 같이 설정
 
             /** slide view 슬라이드 저장소 설정 **/
             if (viewerType == 'slideview'){
@@ -230,11 +256,9 @@ SlideMan.prototype.initSlideView = function(){
 
         /** index 설정 **/
         if (viewerIndex	&& storage){
-            viewerIndex.innerHTML += ('<div data-type="optionRight" onclick="slideman.slideToRight(' +"'"+ viewerId +"'"+ ');"><</div>');
-            viewerIndex.innerHTML += ('<div data-type="optionLeft" onclick="slideman.slideToLeft(' +"'"+ viewerId +"'"+ ');">></div>');
-
+            this.checkEventByViewer(viewerElement, viewerId);
+            this.checkEventForLeftRight(viewerIndex, viewerId);
             var viewerIndexList = storage.linkedViewerIndexList = newEl('div').attr('data-type','index-list').returnElement();
-
             var dataType = getEl(viewerIndex).attr('data-type');
             switch (dataType){
                 case 'index':
@@ -245,9 +269,9 @@ SlideMan.prototype.initSlideView = function(){
                         getEl(slideElement).attr('data-slide', slideId).setStyle('height', '100%');
                         storage.slideIdAndIndexMap[slideId] = l;
                         var menuTitle = 'o';
-                        var menuElement = newEl('div').attr('data-type', 'option').attr('onclick', 'slideman.slideTo("' +viewerId+ '", '+l+');').add(menuTitle).appendTo(viewerIndexList).returnElement();
+                        var menuElement = newEl('div').attr('data-type', 'option').add(menuTitle).appendTo(viewerIndexList).returnElement();
                         storage.slideIdAndMenuMap[slideId] = menuElement;
-                        // viewerIndexList.innerHTML += '<div data-type="option" onclick="slideman.slideTo(' +"'"+ viewerId +"'"+ ', '+l+');">o</div>';
+                        this.checkEventBySlide(viewerElement, menuElement, slideElement, viewerId, slideId, l);
                     }
                     break;
                 case 'tap':
@@ -263,9 +287,9 @@ SlideMan.prototype.initSlideView = function(){
                                 menuTitle = storage.children[l].children[m];
                             }
                         }
-                        var menuElement = newEl('div').attr('data-type', 'option').attr('onclick', 'slideman.slideTo("' +viewerId+ '", '+l+');').add(menuTitle).appendTo(viewerIndexList).returnElement();
+                        var menuElement = newEl('div').attr('data-type', 'option').add(menuTitle).appendTo(viewerIndexList).returnElement();
                         storage.slideIdAndMenuMap[slideId] = menuElement;
-                        this.checkEvent(viewerElement, menuElement, slideElement, slideId);
+                        this.checkEventBySlide(viewerElement, menuElement, slideElement, viewerId, slideId, l);
                     }
                     break;
                 default:
@@ -278,39 +302,87 @@ SlideMan.prototype.initSlideView = function(){
     }
 };
 
-SlideMan.prototype.checkEvent = function(viewerElement, menuElement, slideElement, slideId){
-    if (viewerElement.executeEventMenuOver){
-        getEl(menuElement).addEventListener('mouseover', function(e){
-            viewerElement.executeEventMenuOver(viewerElement, menuElement, slideElement, slideId);
-        });
+
+SlideMan.prototype.checkEventByViewer = function(viewerElement, viewerId){
+    var eventIdForViewer = SlideMan.getViewerEventId(viewerId);
+    var eventFn = getEl(viewerElement).attr('data-event-slide');
+    if (eventFn != null && eventFn != undefined){
+        this.addEventListenerById(eventIdForViewer, 'slide', new Function('event', eventFn));
     }
-    if (viewerElement.executeEventMenuOut){
-        getEl(menuElement).addEventListener('mouseout', function(e){
-            viewerElement.executeEventMenuOut(viewerElement, menuElement, slideElement, slideId);
-        });
+    eventFn = getEl(viewerElement).attr('data-event-menuover');
+    if (eventFn != null && eventFn != undefined){
+        this.addEventListenerById(eventIdForViewer, 'menuover', new Function('event', eventFn));
     }
-    if (viewerElement.executeEventMenuClick){
-        getEl(menuElement).addEventListener('click', function(e){
-            viewerElement.executeEventMenuClick(viewerElement, menuElement, slideElement, slideId);
-        });
+    eventFn = getEl(viewerElement).attr('data-event-menuout');
+    if (eventFn != null && eventFn != undefined){
+        this.addEventListenerById(eventIdForViewer, 'menuout', new Function('event', eventFn));
     }
-}
-
-
-
-
-
-
-/*************************************
- * @author sj : 김수중
- * @date : 15. 04. 09
- * @param obj는 원하는 div의 id
- *
- * 천장에 고정!! 스크롤 이벤트 발생시 호출 시킨다.
- *************************************/
-SlideMan.prototype.whenDocumentScroll = function (event){
-    // this.removeTimer();
+    eventFn = getEl(viewerElement).attr('data-event-menuclick');
+    if (eventFn != null && eventFn != undefined){
+        this.addEventListenerById(eventIdForViewer, 'click', new Function('event', eventFn));
+    }
 };
+
+SlideMan.prototype.checkEventBySlide = function(viewerElement, menuElement, slideElement, viewerId, slideId, slideIndex){
+    var that = this;
+    var eventIdForSlide = SlideMan.getSlideEventId(slideId);
+    var eventIdForViewer = SlideMan.getViewerEventId(viewerId);
+    var eventFn = getEl(slideElement).attr('data-event-slide');
+    if (eventFn != null && eventFn != undefined){
+        this.addEventListenerById(eventIdForSlide, 'slide', new Function('event', eventFn));
+    }
+    eventFn = getEl(slideElement).attr('data-event-menuover');
+    if (eventFn != null && eventFn != undefined){
+        this.addEventListenerById(eventIdForSlide, 'menuover', new Function('event', eventFn));
+    }
+    eventFn = getEl(slideElement).attr('data-event-menuout');
+    if (eventFn != null && eventFn != undefined){
+        this.addEventListenerById(eventIdForSlide, 'menuout', new Function('event', eventFn));
+    }
+    eventFn = getEl(slideElement).attr('data-event-menuclick');
+    if (eventFn != null && eventFn != undefined){
+        this.addEventListenerById(eventIdForSlide, 'click', new Function('event', eventFn));
+    }
+
+    var eventObject = {viewerElement:viewerElement, menuElement:menuElement, slideElement:slideElement, slideId:slideId};
+    getEl(menuElement).addEventListener('mouseover', function(e){
+        that.execEventListenerById(eventIdForViewer, 'menuover', eventObject);
+        that.execEventListenerById(eventIdForSlide, 'menuover', eventObject);
+    });
+    getEl(menuElement).addEventListener('mouseout', function(e){
+            that.execEventListenerById(eventIdForViewer, 'menuout', eventObject);
+            that.execEventListenerById(eventIdForSlide, 'menuout', eventObject);
+    });
+    getEl(menuElement).addEventListener('click', function(e){
+        that.slideTo(viewerId, slideIndex);
+        that.execEventListenerById(eventIdForViewer, 'menuclick', eventObject);
+        that.execEventListenerById(eventIdForSlide, 'menuclick', eventObject);
+    });
+};
+
+SlideMan.prototype.checkEventForLeftRight = function(viewerIndexElement, viewerId){
+    var that = this;
+    getEl(viewerIndexElement).add([
+        newEl('div').html('<').attr('data-type', 'optionLeft').addEventListener('click', function(e){
+            that.slideToLeft(viewerId);
+        }),
+        newEl('div').html('>').attr('data-type', 'optionRight').addEventListener('click', function(e){
+            that.slideToRight(viewerId);
+        })
+    ]);
+};
+
+SlideMan.getViewerEventId = function(viewerId){
+    return '_ev_vw_' + viewerId;
+};
+
+SlideMan.getSlideEventId = function(slideId){
+    return '_ev_sld_' + slideId;
+};
+
+
+
+
 
 /************************************
  * 		When window is resized
@@ -347,9 +419,6 @@ SlideMan.prototype.whenResize = function(event){
             }
         }
     }
-
-    /* 스크롤 되었을 때를 실행 */ /*왜 안돼지?..*/
-    this.whenDocumentScroll(event);
 };
 
 
@@ -473,7 +542,7 @@ SlideMan.prototype.whenTouchUpOnSlideview = function(event, slider) {
 /*************************************
  * 슬라이드 뷰의 슬라이드 전환
  *************************************/
-SlideMan.prototype.slideToRight = function(viewer){
+SlideMan.prototype.slideToLeft = function(viewer){
     //- Viewer
     if (typeof viewer == 'string'){
         viewer = this.viewerIdAndViewerMap[viewer];
@@ -482,7 +551,7 @@ SlideMan.prototype.slideToRight = function(viewer){
     var storage = viewer.storage;
     this.slideTo(viewer, storage.nowShowingChildIdx - 1);
 };
-SlideMan.prototype.slideToLeft = function(viewer){
+SlideMan.prototype.slideToRight = function(viewer){
     //- Viewer
     if (typeof viewer == 'string'){
         viewer = this.viewerIdAndViewerMap[viewer];
@@ -524,7 +593,10 @@ SlideMan.prototype.slideTo = function(viewer, idx){
     var toSlideElement = storage.children[idx];
     if (!toSlideElement)
         return;
+    var viewerId = getEl(viewer).attr('data-viewer');
     var slideId = getEl(toSlideElement).attr('data-slide');
+    var eventIdForViewer = SlideMan.getViewerEventId(viewerId);
+    var eventIdForSlide = SlideMan.getSlideEventId(slideId);
     var menuElement = storage.slideIdAndMenuMap[slideId];
     var destinyObjWidth = toSlideElement.offsetWidth * idx;
     var slideSpeed = 50;
@@ -543,12 +615,9 @@ SlideMan.prototype.slideTo = function(viewer, idx){
                     slider.onSlide = false;
                     /* 정상적으로 slide가 이동이 되면 발생하는 이벤트 */
                     if (!storage.onSlideToBack){
-                        if (slider.parentNode.executeEventSlide){
-                            slider.parentNode.executeEventSlide(viewer, menuElement, toSlideElement, slideId);
-                        }
-                        if (storage.children[idx].executeEventSlide){
-                            storage.children[idx].executeEventSlide(viewer, menuElement, toSlideElement, slideId);
-                        }
+                        var eventObject = {viewerElement:viewer, menuElement:menuElement, toSlideElement:toSlideElement, slideId:slideId};
+                        that.execEventListenerById(eventIdForViewer, 'slide', eventObject);
+                        that.execEventListenerById(eventIdForSlide, 'slide', eventObject);
                     }
                     storage.onSlideToBack = false;
                 }
@@ -569,12 +638,9 @@ SlideMan.prototype.slideTo = function(viewer, idx){
                     slider.onSlide = false;
                     /* 정상적으로 slide가 이동이 되면 발생하는 이벤트 */
                     if (!storage.onSlideToBack){
-                        if (slider.parentNode.executeEventSlide){
-                            slider.parentNode.executeEventSlide(viewer, menuElement, toSlideElement, slideId);
-                        }
-                        if (storage.children[idx].executeEventSlide){
-                            storage.children[idx].executeEventSlide(viewer, menuElement, toSlideElement, slideId);
-                        }
+                        var eventObject = {viewerElement:viewer, menuElement:menuElement, toSlideElement:toSlideElement, slideId:slideId};
+                        that.execEventListenerById(eventIdForViewer, 'slide', eventObject);
+                        that.execEventListenerById(eventIdForSlide, 'slide', eventObject);
                     }
                     storage.onSlideToBack = false;
                 }
