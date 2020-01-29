@@ -6,6 +6,7 @@ try{
     var ready = crossman.ready,
         getEl = crossman.getEl,
         newEl = crossman.newEl,
+        searchEl = crossman.searchEl,
         getData = crossman.getData,
         SjEvent = crossman.SjEvent
     ;
@@ -297,6 +298,8 @@ SlideMan.prototype.initSlideView = function(){
             }
 
             this.expressNowSlide(storage.viewer);
+            // this.whenResize(); /* 박스IN OUT 할 때, 반드시 일어나야 하는 이벤트 설정 */ //임시방편으로 리사이즈할때와 같이 설정
+
             getEl(viewerIndex).add(viewerIndexList);
         }
     }
@@ -389,36 +392,40 @@ SlideMan.getSlideEventId = function(slideId){
  ************************************/
 SlideMan.prototype.whenResize = function(event){
     /* 뷰어 중에 크기를 설정해야만 하는 것들 설정 */
-    var setedObjs = document.querySelectorAll('[data-type=assistant]');
-    for (var j=0, assistant; j<setedObjs.length; j++){
-        assistant = setedObjs[j];
+    searchEl('[data-type=assistant]').each(function(assistant){
         var storage = assistant.children[0];
         var viewer = assistant.parentNode;
         var viewerType = viewer.getAttribute('data-type');
         /** storage 설정 **/
-        if (storage && (viewerType == 'slideview' || viewerType == 'slideview-auto')){
-            var storageWidth = 0;
-            for (var l=0; l<storage.children.length; l++){
-                storage.children[l].style.width = assistant.offsetWidth + 'px';
-                storageWidth += storage.children[l].offsetWidth + 10;
-            }
-            storage.style.width = storageWidth + 'px';
-            if (viewerType == 'slideview'){
-                assistant.scrollLeft = storage.children[storage.nowShowingChildIdx].offsetWidth * storage.nowShowingChildIdx ;
+        if (storage){
+            if ((viewerType == 'slideview' || viewerType == 'slideview-auto')){
+                var storageWidth = 0;
+                for (var l=0; l<storage.children.length; l++){
+                    storage.children[l].style.width = assistant.offsetWidth + 'px';
+                    storageWidth += storage.children[l].offsetWidth + 10;
+                }
+                storage.style.width = storageWidth + 'px';
+                if (viewerType == 'slideview'){
+                    //TODO: 개선필요.. 언제부터인지 부자연스러운거 같기도하고. 어쨌든 임시방편으로 setTimeout으로 한번 더 야림
+                    setTimeout(function(){
+                        assistant.scrollLeft = storage.children[storage.nowShowingChildIdx].offsetWidth * storage.nowShowingChildIdx ;
+                    }, 1);
+                    assistant.scrollLeft = storage.children[storage.nowShowingChildIdx].offsetWidth * storage.nowShowingChildIdx ;
+                    // console.error(storage.nowShowingChildIdx, assistant.scrollLeft, storage.children[storage.nowShowingChildIdx].offsetWidth);
+                }
+            }else if (viewerType == 'scrollview'){
+                var storageWidth = 0;
+                for (var l=0; l<storage.children.length; l++){
+                    storageWidth += storage.children[l].offsetWidth + 20;
+                }
+                if(storage.parentNode.offsetWidth < storageWidth){
+                    storage.style.width = (storageWidth + 50) + 'px';
+                }else{
+                    storage.style.width = '100%';
+                }
             }
         }
-        if (storage && viewerType == 'scrollview'){
-            var storageWidth = 0;
-            for (var l=0; l<storage.children.length; l++){
-                storageWidth += storage.children[l].offsetWidth + 20;
-            }
-            if(storage.parentNode.offsetWidth < storageWidth){
-                storage.style.width = (storageWidth + 50) + 'px';
-            }else{
-                storage.style.width = '100%';
-            }
-        }
-    }
+    });
 };
 
 
@@ -571,6 +578,7 @@ SlideMan.prototype.slideToBack = function(viewer){
     this.slideTo(viewer, storage.nowShowingChildIdx);
 };
 SlideMan.prototype.slideTo = function(viewer, idx){
+    console.error('Slide To', viewer, idx);
     //- Viewer
     if (typeof viewer == 'string'){
         viewer = this.viewerIdAndViewerMap[viewer];
