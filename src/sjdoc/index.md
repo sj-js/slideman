@@ -68,6 +68,9 @@ For convenience, 1-1 code, which loads and creates a Library in the example, is 
 3. 👨‍💻
     *@* *!* *@*
     ```html
+    <script>
+       slideman.detect();
+    </script>
     <body>
         <div data-type="slideview" data-viewer="jmeetsz">
             <div data-type="index"></div>
@@ -107,6 +110,9 @@ For convenience, 1-1 code, which loads and creates a Library in the example, is 
 3. 👨‍💻
     *@* *!* *@*
     ```html
+    <script>
+       slideman.detect();
+    </script>
     <body>
         <div data-type="slideview" data-viewer="jmeetsz">
             <div data-type="tap"></div>
